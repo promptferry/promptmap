@@ -1,8 +1,14 @@
-# 🧪 Mapping AI Prompt | Visual AI Blueprint
+# 🧪 Mapping AI Prompt
 
-![Mapping Prompt Banner](https://mappingprompt.app/og-image.png)
+![Mapping Prompt Banner](https://mappingaiprompt.vercel.app/og-image.png)
 
-**Mapping Prompt** is a professional-grade web application designed for AI artists and creators. It simplifies the complex process of building high-quality prompts for AI image generators (Midjourney, DALL-E) and video models (Sora, Runway Gen-2, Pika).
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![React](https://img.shields.io/badge/React-20232A?style=flat&logo=react&logoColor=61DAFB)](https://reactjs.org/)
+[![Vite](https://img.shields.io/badge/Vite-646CFF?style=flat&logo=vite&logoColor=white)](https://vitejs.dev/)
+
+**Mapping AI Prompt** is a simple, professional-grade web application designed for AI artists and creators. It simplifies the process of building high-quality prompts for AI image generators (Midjourney, DALL-E) and video models (Sora, Runway Gen-2, Pika, Perchance).
+
+[**🚀 Live Demo**](https://mappingaiprompt.vercel.app/)
 
 ## ✨ Key Features
 
@@ -16,7 +22,7 @@
 ## 🛠️ Tech Stack
 
 - **Framework**: React.js with Vite
-- **Styling**: Tailwind CSS v4
+- **Styling**: Vanilla CSS (Premium Custom Design)
 - **Icons**: Lucide React
 - **Exporting**: modern-screenshot (PNG) & XLSX (Excel/JSON)
 - **Drag & Drop**: dnd-kit
@@ -32,11 +38,11 @@
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/mapping-prompt.git
+   git clone https://github.com/promptferry/promptmap.git
    ```
 2. Navigate to the project directory:
    ```bash
-   cd mapping-prompt
+   cd promptmap
    ```
 3. Install dependencies:
    ```bash
@@ -51,13 +57,12 @@
 
 The application is fully optimized with:
 - Dedicated **Open Graph** tags for social previews.
-- **Twitter Cards** for high-engagement sharing.
+- **Google Analytics** integration for traffic monitoring.
 - Clean, semantic HTML5 structure.
 
 ## 🤝 Support the Project
 
-If you find this tool helpful, consider supporting the development:
-- [Support via Donation](https://mappingprompt.app/) (Saweria / Ko-fi)
+If you find this tool helpful, consider supporting the development via the link in the application footer.
 
 ## 📄 License
 
