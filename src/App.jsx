@@ -892,7 +892,7 @@ export default function App() {
                   </div>
 
                   <div className="text-center pt-2">
-                     <p className="text-[9px] text-slate-500 font-black uppercase tracking-[0.15em] opacity-80">Crafted at MappingPrompt.app</p>
+                     <p className="text-[9px] text-slate-500 font-black uppercase tracking-[0.15em] opacity-80">Crafted at mappingaiprompt.vercel.app</p>
                   </div>
                 </div>
               </div>
