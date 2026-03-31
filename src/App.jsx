@@ -769,6 +769,9 @@ export default function App() {
                         <button onClick={() => window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent("I'm using Mapping AI Prompt to build professional AI prompts! 🎨✨")}&url=${encodeURIComponent("https://mappingaiprompt.vercel.app/")}`, '_blank')} className="flex items-center gap-3 px-3 py-2 hover:bg-white/10 rounded-lg text-[10px] font-bold text-white transition-colors">
                             <span className="w-5 h-5 flex items-center justify-center bg-black/50 rounded-md">𝕏</span> Twitter / X
                         </button>
+                        <button onClick={() => window.open(`https://www.threads.net/intent/post?text=${encodeURIComponent("I'm using Mapping AI Prompt to build professional AI prompts! 🎨✨ https://mappingaiprompt.vercel.app/")}`, '_blank')} className="flex items-center gap-3 px-3 py-2 hover:bg-white/10 rounded-lg text-[10px] font-bold text-white transition-colors">
+                            <span className="w-5 h-5 flex items-center justify-center bg-white/10 rounded-md text-white font-serif">@</span> Threads
+                        </button>
                         <button onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent("Check out this Mapping AI Prompt tool! 🎨✨ https://mappingaiprompt.vercel.app/")}`, '_blank')} className="flex items-center gap-3 px-3 py-2 hover:bg-white/10 rounded-lg text-[10px] font-bold text-white transition-colors">
                             <span className="w-5 h-5 flex items-center justify-center bg-green-600/50 rounded-md">W</span> WhatsApp
                         </button>
