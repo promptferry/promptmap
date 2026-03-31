@@ -30,7 +30,8 @@ import {
   Clock,
   Palette,
   Share2,
-  FileImage
+  FileImage,
+  Link
 } from 'lucide-react';
 import { domToDataUrl } from 'modern-screenshot';
 
@@ -747,6 +748,38 @@ export default function App() {
                   <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-36 p-1.5 bg-slate-900 text-white text-[9px] font-medium rounded-lg opacity-0 pointer-events-none group-hover/tooltip:opacity-100 transition-opacity z-[100] shadow-xl border border-white/10 text-center leading-tight">
                     View & Download Recipe Card
                     <div className="absolute bottom-full left-1/2 -translate-x-1/2 border-6 border-transparent border-b-slate-900"></div>
+                  </div>
+                </div>
+
+                <div className="relative group/tooltip">
+                  <button
+                    onClick={() => {
+                        const shareUrl = "https://mappingaiprompt.vercel.app/";
+                        const shareText = "Check out this amazing AI Prompt Mapping tool! 🎨✨";
+                        const redditUrl = `https://www.reddit.com/submit?url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(shareText)}`;
+                        window.open(redditUrl, '_blank');
+                    }}
+                    className="p-1.5 rounded-lg bg-orange-700/50 hover:bg-orange-600 transition-all shadow-lg active:scale-95 border border-white/10 flex items-center justify-center"
+                  >
+                    <Share2 size={14} className="text-white" />
+                  </button>
+                  <div className="absolute top-full right-0 mt-2 w-48 p-2 bg-slate-900 border border-white/10 rounded-xl shadow-2xl opacity-0 group-hover/tooltip:opacity-100 transition-opacity z-[200] pointer-events-auto">
+                    <p className="text-[9px] font-black uppercase text-slate-500 mb-2 px-2">Share App</p>
+                    <div className="grid grid-cols-1 gap-1">
+                        <button onClick={() => window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent("I'm using Mapping AI Prompt to build professional AI prompts! 🎨✨")}&url=${encodeURIComponent("https://mappingaiprompt.vercel.app/")}`, '_blank')} className="flex items-center gap-3 px-3 py-2 hover:bg-white/10 rounded-lg text-[10px] font-bold text-white transition-colors">
+                            <span className="w-5 h-5 flex items-center justify-center bg-black/50 rounded-md">𝕏</span> Twitter / X
+                        </button>
+                        <button onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent("Check out this Mapping AI Prompt tool! 🎨✨ https://mappingaiprompt.vercel.app/")}`, '_blank')} className="flex items-center gap-3 px-3 py-2 hover:bg-white/10 rounded-lg text-[10px] font-bold text-white transition-colors">
+                            <span className="w-5 h-5 flex items-center justify-center bg-green-600/50 rounded-md">W</span> WhatsApp
+                        </button>
+                        <button onClick={() => window.open(`https://www.reddit.com/submit?url=${encodeURIComponent("https://mappingaiprompt.vercel.app/")}&title=${encodeURIComponent("Visual Blueprint & Mapping tool for AI Prompts")}`, '_blank')} className="flex items-center gap-3 px-3 py-2 hover:bg-white/10 rounded-lg text-[10px] font-bold text-white transition-colors">
+                            <span className="w-5 h-5 flex items-center justify-center bg-orange-600/50 rounded-md">R</span> Reddit
+                        </button>
+                        <hr className="border-white/5 my-1" />
+                        <button onClick={() => { navigator.clipboard.writeText("https://mappingaiprompt.vercel.app/"); alert("Link Copied!"); }} className="flex items-center gap-3 px-3 py-2 hover:bg-white/10 rounded-lg text-[10px] font-bold text-white transition-colors">
+                            <Link size={12} /> Copy App URL
+                        </button>
+                    </div>
                   </div>
                 </div>
 
