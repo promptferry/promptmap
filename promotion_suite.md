@@ -55,6 +55,21 @@ Fully free to use: https://mappingaiprompt.vercel.app/
 
 ---
 
+## 🧵 Threads (Engaging & Community)
+
+**Post Draft**:
+I've always found it hard to keep track of character details and camera moves in long AI prompts. 🤦‍♂️
+
+So I built a small app: **Mapping AI Prompt**. 🎨✨
+
+It's a visual blueprint tool that turns your ideas into structured prompts. ✨
+
+Try it for free: https://mappingaiprompt.vercel.app/
+
+#MappingAIPrompt #Midjourney #AIArtist #GenerativeAI #PromptMap
+
+---
+
 ## 💡 Tips untuk Promosi:
 1. **Lampirkan Gambar**: Gunakan file `og-image.png` dari folder `public` atau ambil screenshot aplikasi saat digunakan agar postingan lebih menarik.
 2. **Balas Komentar**: Jika ada yang bertanya di Reddit, pastikan untuk menjawab. Ini akan meningkatkan visibilitas postingan Anda.

@@ -96,6 +96,14 @@ function SortableEntity({
 
   const getHeaderBg = () => {
     switch (entity.type) {
+      case 'character': return 'bg-orange-600';
+      case 'interaction': return 'bg-red-600';
+      case 'environment': return 'bg-blue-600';
+      case 'motion': return 'bg-purple-600';
+      case 'camera': return 'bg-indigo-600';
+      case 'sequence': return 'bg-emerald-600';
+      case 'style': return 'bg-pink-600';
+      case 'magic': return 'bg-emerald-500';
       case 'negative': return 'bg-slate-700';
       default: return 'bg-slate-900';
     }
@@ -230,8 +238,14 @@ export default function App() {
   const [sourceLanguage, setSourceLanguage] = useState('id');
   const fileInputRef = useRef(null);
 
-  const PHOTO_MAGIC = ["8k resolution", "extremely detailed", "photorealistic", "cinematic lighting", "ray tracing", "sharp focus", "masterpiece", "octane render", "stunning composition", "vivid colors", "highly intricate details"];
-  const VIDEO_MAGIC = ["high framerate", "fluid motion", "professional color grading", "smooth transitions", "RAW video", "motion blur", "natural physics", "flawless camera movement", "cinematic motion", "high dynamic range"];
+  const PHOTO_MAGIC = [
+    "8k resolution", "extremely detailed", "photorealistic", "cinematic lighting", "ray tracing", "sharp focus", "masterpiece", "octane render", "stunning composition", "vivid colors", "highly intricate details",
+    "unreal engine 5", "volumetric fog", "subsurface scattering", "intricate textures", "hyper-realistic", "4k texture", "dramatic highlights", "moody lighting", "depth of field", "bokeh", "clean edges"
+  ];
+  const VIDEO_MAGIC = [
+    "high framerate", "fluid motion", "professional color grading", "smooth transitions", "RAW video", "motion blur", "natural physics", "flawless camera movement", "cinematic motion", "high dynamic range",
+    "120fps", "steadycam shot", "dynamic parallax", "slow motion", "time-lapse essence", "particle simulation", "realistic liquid physics", "global illumination", "film noir vibe", "vibrant contrast"
+  ];
 
   const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
 
@@ -294,7 +308,9 @@ export default function App() {
       promptParts.push(`Camera movement: ${cameraItems.join('. ')}`);
     }
 
-    let finalOutput = promptParts.join('. ').replace(/\.\./g, '.').trim();
+    let finalOutput = promptParts.join('. ').replace(/\s+/g, ' ').replace(/\.\./g, '.').replace(/\. \./g, '.').trim();
+    if (finalOutput && !finalOutput.endsWith('.')) finalOutput += '.';
+
     const negativeItems = negatives.flatMap(e => e.items.filter(i => i.selected).map(i => i.text));
     if (negativeItems.length > 0) {
       finalOutput += `\n\nNegative Prompt: ${negativeItems.join(', ')}`;
@@ -310,7 +326,7 @@ export default function App() {
     return `MP-${hash.toString(36).toUpperCase()}-${Math.random().toString(36).substring(7, 10).toUpperCase()}`;
   }, [finalPrompt]);
 
-  const handleTranslate = async () => {
+  const translatePrompt = async () => {
     if (!rawGeneratedPrompt || isTranslating) return;
     setIsTranslating(true);
     setError(null);
@@ -447,15 +463,20 @@ export default function App() {
     const isVideoBody = entities.some(e => e.type === 'motion' || e.type === 'camera' || e.type === 'sequence');
     const pool = isVideoBody ? VIDEO_MAGIC : PHOTO_MAGIC;
     
-    // Pick 4-5 random items from the pool
-    const selected = [...pool].sort(() => 0.5 - Math.random()).slice(0, 4);
-    
+    // Pick 3-4 random items from the pool that ARE NOT already in the magic entity
     setEntities(prev => {
       const magicEntity = prev.find(e => e.type === 'magic');
+      const existingTexts = magicEntity ? magicEntity.items.map(i => i.text) : [];
+      
+      const availableItems = pool.filter(text => !existingTexts.includes(text));
+      const selected = [...availableItems].sort(() => 0.5 - Math.random()).slice(0, 3);
+      
+      if (selected.length === 0) return prev; // No new items to add
+
       const newItems = selected.map(text => ({ id: `item-${Date.now()}-${Math.random()}`, text, selected: true }));
       
       if (magicEntity) {
-        return prev.map(e => e.type === 'magic' ? { ...e, items: newItems } : e);
+        return prev.map(e => e.type === 'magic' ? { ...e, items: [...e.items, ...newItems] } : e);
       } else {
         return [...prev, { id: `entity-${Date.now()}`, name: 'Magic Enhancer', type: 'magic', isOpen: true, items: newItems }];
       }
@@ -469,7 +490,7 @@ export default function App() {
   const addItem = (entId, text) => { setTranslatedPrompt(''); setEntities(entities.map(e => e.id === entId ? { ...e, items: [...e.items, { id: `item-${Date.now()}`, text, selected: true }] } : e)); };
   const removeItem = (entId, itemId) => { setTranslatedPrompt(''); setEntities(entities.map(e => e.id === entId ? { ...e, items: e.items.filter(i => i.id !== itemId) } : e)); };
 
-  const exportData = () => {
+  const mapToExcel = () => {
     const rows = [];
     entities.forEach(entity => {
       if (entity.items.length === 0) {
@@ -495,7 +516,7 @@ export default function App() {
     XLSX.writeFile(workbook, "prompt_map.xlsx");
   };
 
-  const importData = (e) => {
+  const excelToMap = (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
@@ -576,7 +597,11 @@ export default function App() {
           <header className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-col gap-4">
             <div className="flex justify-between items-center">
               <h1 className="text-xl font-black flex items-center gap-2">
-                <div className="p-1.5 bg-slate-900 rounded-lg rotate-3"><Sparkles className="text-white" size={16} /></div>
+                <div className="p-1.5 bg-[#1d4f7a] rounded-lg">
+                  <svg width="20" height="20" viewBox="0 0 1080 1080" fill="white" xmlns="http://www.w3.org/2000/svg">
+                    <path fillRule="evenodd" d="M999.051,570.308q-51.3,49.789-144.666,49.775c-67.995,0-108.838-.022-111.384-0.023V790.739q0,7.2-.586,13.588-0.8,17.511-7.669,29.436a43.271,43.271,0,0,1-6.536,9.417q-14.8,16-49.916,16c-0.079,0-.153,0-0.232,0s-0.155,0-.235,0q-3.987,0-7.764-.245-27.245-1.648-41.787-14.581c-0.12-.1-0.247-0.186-0.366-0.284q-18.5-15.1-18.488-44.442V619.945H548.566q-44.394,0-44.389-51.984,0-25.255,11.263-40.1,11.257-14.863,33.126-14.852h60.856V420.1q0-3.321.064-6.586-5.136-76.059-78.17-76.075-39.756,0-59.161,25.332t-19.412,80.439V781.851q0,36.456-14.79,52.441t-49.917,16q-35.141,0-51.766-16.444t-16.638-52V443.205q0-105.763-78.573-105.771t-78.573,87.994v374.2q0,59.559-64.707,59.552-31.437,0-49.917-15.11-18.5-15.1-18.488-44.442V432.539q0-104.868,46.682-158.657,46.667-53.767,138.2-53.774,67.467,0,111.851,26.665t59.161,76.44q14.776-49.769,59.161-76.44t113.7-26.665q78.981,0,123.575,36.492,55.789-36.474,165.292-36.492,95.2,0,149.288,48.886t54.072,157.323Q1050.35,520.541,999.051,570.308ZM922.327,357.433q-11.569-21.769-32.353-28.443-20.8-6.666-50.38-6.666-53.621,0-75.337,18.665t-21.723,64.885c0,1.535,0,3.32,0,5.31q0.463,10.393.472,21.355v79.8c4.161,0.041,24.156.2,85.5,0.2q39.734,0,62.858-6.666,23.1-6.666,32.816-25.332t9.706-54.219Q933.882,379.216,922.327,357.433Z"/>
+                  </svg>
+                </div>
                 Mapping AI Prompt
               </h1>
             </div>
@@ -615,12 +640,12 @@ export default function App() {
             </div>
 
             <div className="flex gap-3 pt-2 border-t border-slate-50">
-              <input type="file" ref={fileInputRef} onChange={importData} accept=".json, .xlsx, .xls" className="hidden" />
+              <input type="file" ref={fileInputRef} onChange={excelToMap} accept=".json, .xlsx, .xls" className="hidden" />
               <button onClick={() => fileInputRef.current?.click()} className="flex-1 py-2 bg-slate-50 border border-slate-200 rounded-lg text-[10px] font-bold flex items-center justify-center gap-2 hover:bg-slate-100 transition-colors">
-                <Download size={14} /> Import Map
+                <Download size={14} /> Excel to Map
               </button>
-              <button onClick={exportData} className="flex-1 py-2 bg-slate-50 border border-slate-200 text-green-600 rounded-lg text-[10px] font-bold flex items-center justify-center gap-2 hover:bg-slate-100 transition-colors">
-                <FileSpreadsheet size={14} /> Export Map
+              <button onClick={mapToExcel} className="flex-1 py-2 bg-slate-50 border border-slate-200 text-green-600 rounded-lg text-[10px] font-bold flex items-center justify-center gap-2 hover:bg-slate-100 transition-colors">
+                <FileSpreadsheet size={14} /> Map to Excel
               </button>
             </div>
           </header>
@@ -705,7 +730,7 @@ export default function App() {
                   style={{ maxWidth: '120px' }}
                 >
                   {LANGUAGES.map(lang => (
-                    <option key={lang.code} value={lang.code} style={{ background: '#1e293b', color: 'white' }}>
+                    <option key={lang.code} value={lang.code} className="bg-white text-slate-900">
                       {lang.label}
                     </option>
                   ))}
@@ -713,11 +738,11 @@ export default function App() {
               <div className="flex items-center gap-1.5 shrink-0">
                 <div className="relative group/tooltip">
                   <button
-                    onClick={handleTranslate}
-                    disabled={isTranslating}
-                    className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center"
+                    onClick={translatePrompt}
+                    disabled={isTranslating || !rawGeneratedPrompt || (translatedPrompt && translatedPrompt === rawGeneratedPrompt)}
+                    className="p-1.5 rounded-lg bg-slate-800 text-white hover:bg-slate-700 transition-all shadow-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed border border-white/5"
                   >
-                    {isTranslating ? <Loader2 size={14} className="animate-spin text-white" /> : <Languages size={14} className="text-white" />}
+                    {isTranslating ? <Loader2 size={14} className="animate-spin" /> : <Languages size={14} />}
                   </button>
                   <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-32 p-1.5 bg-slate-900 text-white text-[9px] font-medium rounded-lg opacity-0 pointer-events-none group-hover/tooltip:opacity-100 transition-opacity z-[100] shadow-xl border border-white/10 text-center leading-tight">
                     Translate to English
@@ -793,12 +818,10 @@ export default function App() {
                   >
                     {isCopied ? 'Copied!' : 'Copy Prompt'}
                   </button>
-                  {!isCopied && (
-                    <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-28 p-1.5 bg-slate-900 text-white text-[9px] font-medium rounded-lg opacity-0 pointer-events-none group-hover/tooltip:opacity-100 transition-opacity z-[100] shadow-xl border border-white/10 text-center leading-tight">
-                      Copy to clipboard
-                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 border-6 border-transparent border-b-slate-900"></div>
-                    </div>
-                  )}
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-32 p-1.5 bg-slate-900 text-white text-[9px] font-medium rounded-lg opacity-0 pointer-events-none group-hover/tooltip:opacity-100 transition-opacity z-[100] shadow-xl border border-white/10 text-center leading-tight">
+                    Copy to Clipboard
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 border-6 border-transparent border-b-slate-900"></div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -833,7 +856,7 @@ export default function App() {
           <div className="hidden md:block"></div>
 
           {/* Column 6: Support */}
-          <div className="space-y-6 md:text-right flex flex-col md:items-end">
+          <div className="space-y-6 text-right flex flex-col items-end">
             <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Support</h4>
             <div className="space-y-4">
               <ul className="space-y-4">

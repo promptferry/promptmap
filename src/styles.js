@@ -6,7 +6,10 @@ export const STYLE_GROUPS = [
       { id: 'm1-1', text: "Cyber Noir", icon: "🌃", description: "Combine Neon, Dramatic Shadows, and Cyberpunk Aesthetics.", tokens: ["Cyberpunk Aesthetic", "Moody Dramatic Shadows", "High Contrast", "Anamorphic Lens"] },
       { id: 'm1-2', text: "Epic Fantasy", icon: "⚔️", description: "Combine Oil Painting, Golden Hour, and Ethereal Magic Glow.", tokens: ["Oil Painting Style", "Volumetric Cinematic Lighting", "Golden Hour Sunlight", "Ethereal Dreamy Glow"] },
       { id: 'm1-3', text: "Gritty Action", icon: "🏃", description: "Combine Film Grain, Hard Flash, and Motion Blur for impact.", tokens: ["35mm Film Grain", "Hard Strobe Flash", "Motion Blur", "Handheld Shake"] },
-      { id: 'm1-4', text: "Pure Minimalism", icon: "⚪", description: "Clean, flat colors with studio lighting and wide angle focus.", tokens: ["Clean Background", "Studio Portrait Lighting", "Ultra-Wide Angle Lens", "Minimalist Aesthetic"] }
+      { id: 'm1-4', text: "Pure Minimalism", icon: "⚪", description: "Clean, flat colors with studio lighting and wide angle focus.", tokens: ["Clean Background", "Studio Portrait Lighting", "Ultra-Wide Angle Lens", "Minimalist Aesthetic"] },
+      { id: 'm1-5', text: "Retro Future", icon: "🌇", description: "80s Synthwave aesthetic with neon glow and VHS grain.", tokens: ["Cyberpunk Aesthetic", "Vintage 1990s VHS", "Cyber Neon Glow", "Anamorphic Lens"] },
+      { id: 'm1-6', text: "Studio B&W", icon: "🕴️", description: "Professional monochromatic portraiture with dramatic shadows.", tokens: ["Studio Portrait Lighting", "Moody Dramatic Shadows", "35mm Film Grain", "Extreme Macro Detail"] },
+      { id: 'm1-7', text: "Nature Doc", icon: "🦁", description: "High-end wildlife/macro style with beautiful bokeh.", tokens: ["National Geographic Photo", "Volumetric Cinematic Lighting", "Bokeh Depth of Field", "Ultra-Wide Angle Lens"] }
     ]
   },
   {
