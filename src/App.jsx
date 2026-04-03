@@ -31,7 +31,16 @@ import {
   Palette,
   Share2,
   FileImage,
-  Link
+  Link,
+  Database,
+  Save,
+  Star,
+  Folder,
+  FolderPlus,
+  ArrowDownToLine,
+  ArrowUpFromLine,
+  Trash,
+  Search
 } from 'lucide-react';
 import { domToDataUrl } from 'modern-screenshot';
 
@@ -60,6 +69,21 @@ import { TEMPLATES } from './templates';
 import { STYLE_GROUPS } from './styles';
 
 const SHOW_ADS = false; // Toggle this to true when you want to show ads
+
+const HISTORY_ENTRIES = [
+  {
+    date: '2026-04-01',
+    version: '1.0',
+    title: 'Initial production deployment',
+    description: 'Initial deployment at https://mappingaiprompt.vercel.app. Core features included modular prompt mapping, DnD builder, saving to local gallery, and export to PNG/XLSX.'
+  },
+  {
+    date: '2026-04-03',
+    version: '1.1',
+    title: 'Gallery Excel sync improvements',
+    description: 'Added gallery-wide Excel import/export, table header format, clear-import behavior, gallery search X button, and hidden desktop scrollbar for blueprint.'
+  }
+];
 
 const getIcon = (type) => {
   switch (type) {
@@ -150,7 +174,7 @@ function SortableEntity({
                 </div>
                 <button
                   onClick={(e) => { e.stopPropagation(); removeItem(entity.id, item.id); }}
-                  className="text-slate-300 hover:text-red-500 p-1 opacity-0 group-hover:opacity-100"
+                  className="text-slate-300 hover:text-red-500 p-1 transition-colors group-hover:text-red-400"
                 >
                   <Trash2 size={14} />
                 </button>
@@ -234,9 +258,149 @@ export default function App() {
   const [translatedPrompt, setTranslatedPrompt] = useState('');
   const [error, setError] = useState(null);
   const [showRecipeModal, setShowRecipeModal] = useState(false);
-  const [recipeTitle, setRecipeTitle] = useState('Visual Blueprint');
+  const [recipeTitle, setRecipeTitle] = useState('');
   const [sourceLanguage, setSourceLanguage] = useState('id');
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
   const fileInputRef = useRef(null);
+  const storageImportRef = useRef(null);
+  const galleryExcelInputRef = useRef(null);
+
+  useEffect(() => {
+    document.title = 'Mapping AI Prompt v1.1';
+  }, []);
+
+  // Storage States
+  const [isGalleryOpen, setIsGalleryOpen] = useState(false);
+  const [savedPrompts, setSavedPrompts] = useState(() => {
+    try {
+      const saved = localStorage.getItem('mapping_ai_prompts');
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  });
+  const [folders, setFolders] = useState(() => {
+    try {
+      const saved = localStorage.getItem('mapping_ai_folders');
+      return saved ? JSON.parse(saved) : ['Uncategorized'];
+    } catch { return ['Uncategorized']; }
+  });
+  const [gallerySortBy, setGallerySortBy] = useState('Newest');
+  const [activeFolder, setActiveFolder] = useState('All');
+  const [newFolderName, setNewFolderName] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    localStorage.setItem('mapping_ai_prompts', JSON.stringify(savedPrompts));
+  }, [savedPrompts]);
+
+  useEffect(() => {
+    localStorage.setItem('mapping_ai_folders', JSON.stringify(folders));
+  }, [folders]);
+
+  // Storage Logic
+  const handleSaveToStorage = () => {
+    if (!recipeTitle || recipeTitle.trim() === '') {
+      alert("Title is required! Please enter a title in the Main Page before saving.");
+      return;
+    }
+    const newPrompt = {
+      id: `prompt-${Date.now()}`,
+      title: recipeTitle.trim(),
+      promptText: finalPrompt,
+      entities: JSON.parse(JSON.stringify(entities)),
+      timestamp: Date.now(),
+      isFavorite: false,
+      folder: 'Uncategorized'
+    };
+    setSavedPrompts([newPrompt, ...savedPrompts]);
+    alert("Saved to Browser Storage!");
+  };
+
+  const toggleStar = (id) => {
+    setSavedPrompts(prompts => prompts.map(p => p.id === id ? { ...p, isFavorite: !p.isFavorite } : p));
+  };
+  
+  const deleteSaved = (id) => {
+    if(confirm('Delete this saved prompt?')) {
+      setSavedPrompts(prompts => prompts.filter(p => p.id !== id));
+    }
+  };
+
+  const updateSavedFolder = (id, folderName) => {
+    setSavedPrompts(prompts => prompts.map(p => p.id === id ? { ...p, folder: folderName } : p));
+  };
+
+  const loadSaved = (promptData) => {
+    setEntities(promptData.entities);
+    setRecipeTitle(promptData.title);
+    setTranslatedPrompt('');
+    setIsGalleryOpen(false);
+  };
+
+  const createNewFolder = () => {
+    if (newFolderName.trim() && !folders.includes(newFolderName.trim())) {
+      setFolders([...folders, newFolderName.trim()]);
+      setNewFolderName('');
+    }
+  };
+
+  const exportStorageJSON = () => {
+    const data = { prompts: savedPrompts, folders: folders };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `MappingAI_Backup_${Date.now()}.json`;
+    link.click();
+  };
+
+  const importStorageJSON = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const imported = JSON.parse(event.target.result);
+        if (imported.prompts && imported.folders) {
+          setSavedPrompts(imported.prompts);
+          setFolders(imported.folders);
+        } else {
+             alert('Invalid backup file format.');
+        }
+      } catch (err) { alert('Failed to parse JSON file.'); }
+    };
+    reader.readAsText(file);
+    e.target.value = null;
+  };
+
+  const clearStorage = () => {
+    if(confirm('Are you sure you want to clear ALL saved prompts and folders? This cannot be undone.')) {
+      setSavedPrompts([]);
+      setFolders(['Uncategorized']);
+    }
+  };
+
+  const filteredAndSortedPrompts = useMemo(() => {
+    let result = [...savedPrompts];
+    if (activeFolder !== 'All') {
+      result = result.filter(p => p.folder === activeFolder);
+    }
+    if (searchQuery.trim() !== '') {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(p => 
+        p.title.toLowerCase().includes(q) || 
+        (p.promptText && p.promptText.toLowerCase().includes(q))
+      );
+    }
+    if (gallerySortBy === 'Newest') {
+      result.sort((a, b) => b.timestamp - a.timestamp);
+    } else if (gallerySortBy === 'Oldest') {
+      result.sort((a, b) => a.timestamp - b.timestamp);
+    } else if (gallerySortBy === 'Best') {
+      result = result.filter(p => p.isFavorite);
+      result.sort((a, b) => b.timestamp - a.timestamp);
+    }
+    return result;
+  }, [savedPrompts, gallerySortBy, activeFolder, searchQuery]);
 
   const PHOTO_MAGIC = [
     "8k resolution", "extremely detailed", "photorealistic", "cinematic lighting", "ray tracing", "sharp focus", "masterpiece", "octane render", "stunning composition", "vivid colors", "highly intricate details",
@@ -392,13 +556,15 @@ export default function App() {
   const loadRandomTemplate = (typeFilter) => {
     const filtered = typeFilter ? TEMPLATES.filter(t => t.type === typeFilter) : TEMPLATES;
     const randomIdx = Math.floor(Math.random() * filtered.length);
-    const newTemplate = JSON.parse(JSON.stringify(filtered[randomIdx].data));
+    const selectedTemplate = filtered[randomIdx];
+    const newTemplate = JSON.parse(JSON.stringify(selectedTemplate.data));
     const freshened = newTemplate.map(ent => ({
       ...ent,
       id: `entity-${Date.now()}-${Math.random()}`,
       items: ent.items.map(it => ({ ...it, id: `item-${Date.now()}-${Math.random()}` }))
     }));
     setEntities(freshened);
+    setRecipeTitle(selectedTemplate.name);
     setTranslatedPrompt('');
   };
 
@@ -490,33 +656,39 @@ export default function App() {
   const addItem = (entId, text) => { setTranslatedPrompt(''); setEntities(entities.map(e => e.id === entId ? { ...e, items: [...e.items, { id: `item-${Date.now()}`, text, selected: true }] } : e)); };
   const removeItem = (entId, itemId) => { setTranslatedPrompt(''); setEntities(entities.map(e => e.id === entId ? { ...e, items: e.items.filter(i => i.id !== itemId) } : e)); };
 
-  const mapToExcel = () => {
-    const rows = [];
-    entities.forEach(entity => {
-      if (entity.items.length === 0) {
-        rows.push({
-          Section: entity.name,
-          Field: '',
-          Selected: ''
+  const exportGalleryToExcel = () => {
+    if (savedPrompts.length === 0) {
+      alert('No prompts available in gallery for export.');
+      return;
+    }
+
+    const workbook = XLSX.utils.book_new();
+
+    savedPrompts.forEach((prompt) => {
+      const rows = [];
+      rows.push(['Title', prompt.title]);
+      rows.push(['Folder', prompt.folder]);
+      rows.push(['IsFavorite', prompt.isFavorite ? 'true' : 'false']);
+      rows.push(['Section', 'Type', 'Detail', 'IsSelected']);
+
+      // Data rows: Section | Type | Detail | IsSelected
+      prompt.entities.forEach((entity) => {
+        const sectionName = entity.name || '';
+        const typeName = entity.type || '';
+        (entity.items || []).forEach((item) => {
+          rows.push([sectionName, typeName, item.text || '', item.selected ? 'true' : 'false']);
         });
-      } else {
-        entity.items.forEach(item => {
-          rows.push({
-            Section: entity.name,
-            Field: item.text,
-            Selected: item.selected
-          });
-        });
-      }
+      });
+
+      const worksheet = XLSX.utils.aoa_to_sheet(rows);
+      const sheetName = prompt.title ? prompt.title.substring(0, 31) : `Prompt-${Date.now()}`;
+      XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
     });
 
-    const worksheet = XLSX.utils.json_to_sheet(rows);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Prompt Map");
-    XLSX.writeFile(workbook, "prompt_map.xlsx");
+    XLSX.writeFile(workbook, `gallery_prompts_${Date.now()}.xlsx`);
   };
 
-  const excelToMap = (e) => {
+  const importGalleryFromExcel = (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
@@ -525,10 +697,15 @@ export default function App() {
       reader.onload = (event) => {
         try {
           const imported = JSON.parse(event.target.result);
-          setEntities(imported);
-          setTranslatedPrompt('');
+          if (imported.prompts && imported.folders) {
+            setSavedPrompts(imported.prompts);
+            setFolders(imported.folders);
+            setError(null);
+          } else {
+            alert('JSON tidak valid untuk gallery import.');
+          }
         } catch (err) {
-          setError("File format not supported in this preview.");
+          alert('Failed to parse JSON file.');
         }
       };
       reader.readAsText(file);
@@ -541,48 +718,77 @@ export default function App() {
       try {
         const data = new Uint8Array(event.target.result);
         const workbook = XLSX.read(data, { type: 'array' });
-        const firstSheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[firstSheetName];
-        const rows = XLSX.utils.sheet_to_json(worksheet);
 
-        const entityMap = new Map();
+        const importedPrompts = [];
 
-        rows.forEach(row => {
-          if (!row.Section) return;
+        workbook.SheetNames.forEach((sheetName) => {
+          const worksheet = workbook.Sheets[sheetName];
+          const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: false, defval: '' });
 
-          if (!entityMap.has(row.Section)) {
-            const lowerName = row.Section.toLowerCase();
-            let inferredType = 'character';
-            if (lowerName.includes('interaction') || lowerName.includes('interaksi')) inferredType = 'interaction';
-            else if (lowerName.includes('environment') || lowerName.includes('lingkungan') || lowerName.includes('env')) inferredType = 'environment';
-            else if (lowerName.includes('motion') || lowerName.includes('pergerakan') || lowerName.includes('gerak')) inferredType = 'motion';
-            else if (lowerName.includes('camera') || lowerName.includes('kamera')) inferredType = 'camera';
-            else if (lowerName.includes('sequence') || lowerName.includes('timeline') || lowerName.includes('urutan')) inferredType = 'sequence';
-            else if (lowerName.includes('style') || lowerName.includes('gaya') || lowerName.includes('visual')) inferredType = 'style';
-            else if (lowerName.includes('negative') || lowerName.includes('negatif')) inferredType = 'negative';
+          if (!rows || rows.length < 4) return;
 
-            entityMap.set(row.Section, {
-              id: `entity-${Date.now()}-${Math.random()}`,
-              name: row.Section,
-              type: inferredType,
-              isOpen: true,
-              items: []
-            });
+          const title = rows[0][1] || `Sheet-${Math.floor(Math.random()*10000)}`;
+          const folder = rows[1][1] || 'Uncategorized';
+          const isFavoriteRaw = String(rows[2][1] || 'false').toLowerCase();
+          const isFavorite = isFavoriteRaw === 'true' || isFavoriteRaw === '1' || isFavoriteRaw === 'yes';
+
+          let entityRows = rows.slice(4);
+          if (rows[3] && String(rows[3][0]).toLowerCase() === 'section' && String(rows[3][1]).toLowerCase() === 'type') {
+            // header row already skipped
+          } else {
+            entityRows = rows.slice(3);
           }
 
-          if (row.Field) {
-            entityMap.get(row.Section).items.push({
+          const sectionMap = new Map();
+          entityRows.forEach((row) => {
+            const sectionName = row[0] ? String(row[0]) : '';
+            const typeName = row[1] ? String(row[1]) : '';
+            const detailText = row[2] ? String(row[2]) : '';
+            const selectedValue = row[3] ? String(row[3]).toLowerCase() : 'false';
+            const selected = selectedValue === 'true' || selectedValue === '1' || selectedValue === 'yes';
+
+            if (!sectionName || !detailText) return;
+
+            if (!sectionMap.has(sectionName)) {
+              sectionMap.set(sectionName, {
+                id: `entity-${Date.now()}-${Math.random()}`,
+                name: sectionName,
+                type: typeName || 'character',
+                isOpen: true,
+                items: []
+              });
+            }
+
+            sectionMap.get(sectionName).items.push({
               id: `item-${Date.now()}-${Math.random()}`,
-              text: row.Field,
-              selected: row.Selected !== false && String(row.Selected).toLowerCase() !== 'false'
+              text: detailText,
+              selected
             });
-          }
+          });
+
+          importedPrompts.push({
+            id: `prompt-${Date.now()}-${Math.random()}`,
+            title: sheetName,
+            folder,
+            isFavorite,
+            timestamp: Date.now(),
+            promptText: '',
+            entities: Array.from(sectionMap.values())
+          });
         });
 
-        setEntities(Array.from(entityMap.values()));
-        setTranslatedPrompt('');
+        if (importedPrompts.length > 0) {
+          setSavedPrompts([]);
+          setFolders(['Uncategorized']);
+          setSavedPrompts(importedPrompts);
+          setFolders([...new Set(importedPrompts.map(p => p.folder || 'Uncategorized'))]);
+          setError(null);
+          alert(`${importedPrompts.length} prompt berhasil diimport dari Excel.`);
+        } else {
+          alert('Tidak ada data prompt valid yang ditemukan di file Excel.');
+        }
       } catch (err) {
-        setError("Failed to parse Excel file.");
+        setError('Failed to parse gallery Excel file.');
       }
     };
     reader.readAsArrayBuffer(file);
@@ -610,6 +816,7 @@ export default function App() {
               <div className="flex gap-2 flex-wrap pb-3 border-b border-slate-50">
                 <button onClick={() => loadRandomTemplate('image')} className="px-4 py-2 bg-purple-600 text-white border border-purple-500 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-2 hover:bg-purple-700 transition-all shadow-md active:scale-95"><ImageIcon size={14} /> Random Image</button>
                 <button onClick={() => loadRandomTemplate('video')} className="px-4 py-2 bg-indigo-600 text-white border border-indigo-500 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-2 hover:bg-indigo-700 transition-all shadow-md active:scale-95"><Video size={14} /> Random Video</button>
+                <button onClick={() => setShowHistoryModal(true)} className="px-4 py-2 bg-slate-900 text-white border border-slate-700 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-2 hover:bg-slate-800 transition-all shadow-md active:scale-95"><Clock size={14} /> History</button>
               </div>
 
               <div className="flex gap-1.5 flex-wrap">
@@ -639,14 +846,15 @@ export default function App() {
               </div>
             </div>
 
-            <div className="flex gap-3 pt-2 border-t border-slate-50">
-              <input type="file" ref={fileInputRef} onChange={excelToMap} accept=".json, .xlsx, .xls" className="hidden" />
-              <button onClick={() => fileInputRef.current?.click()} className="flex-1 py-2 bg-slate-50 border border-slate-200 rounded-lg text-[10px] font-bold flex items-center justify-center gap-2 hover:bg-slate-100 transition-colors">
-                <Download size={14} /> Excel to Map
-              </button>
-              <button onClick={mapToExcel} className="flex-1 py-2 bg-slate-50 border border-slate-200 text-green-600 rounded-lg text-[10px] font-bold flex items-center justify-center gap-2 hover:bg-slate-100 transition-colors">
-                <FileSpreadsheet size={14} /> Map to Excel
-              </button>
+            <div className="pt-2 border-t border-slate-50">
+               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 flex block">Prompt Title <span className="text-red-500 ml-1">*</span></label>
+               <input 
+                 type="text" 
+                 value={recipeTitle}
+                 onChange={(e) => setRecipeTitle(e.target.value)}
+                 placeholder="Input Prompt Title"
+                 className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-indigo-500 outline-none shadow-sm transition-all"
+               />
             </div>
           </header>
 
@@ -660,6 +868,13 @@ export default function App() {
               ))}
             </SortableContext>
           </DndContext>
+
+          <button
+             onClick={handleSaveToStorage}
+             className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3 transition-all active:scale-95 shadow-lg shadow-indigo-500/20 border border-indigo-500 mb-2"
+          >
+             <Save size={20} /> Save to Browser Storage 
+          </button>
 
           <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm space-y-6">
             <div className="flex items-center gap-2 border-b border-slate-50 pb-3">
@@ -838,6 +1053,33 @@ export default function App() {
       </div>
     </main>
 
+      {/* History Modal */}
+      {showHistoryModal && (
+        <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-3xl bg-white rounded-2xl shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200">
+              <h3 className="text-sm font-black uppercase tracking-wider text-slate-900">Release History</h3>
+              <button onClick={() => setShowHistoryModal(false)} className="p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700"><X size={16} /></button>
+            </div>
+            <div className="max-h-[70vh] overflow-y-auto p-5 space-y-4 text-sm text-slate-700">
+              {HISTORY_ENTRIES.map((entry) => (
+                <div key={`${entry.date}-${entry.version}`} className="border border-slate-200 rounded-xl p-4 bg-slate-50">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{entry.date}</p>
+                      <h4 className="text-base font-black text-slate-900">{entry.title}</h4>
+                    </div>
+                    <span className="text-xs font-black text-indigo-700 bg-indigo-100 px-2 py-1 rounded-lg">{entry.version}</span>
+                  </div>
+                  <p className="mt-2 text-slate-600">{entry.description}</p>
+                </div>
+              ))}
+              <p className="text-xs text-slate-400">Source: .guide_book/history.md</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Footer Section - Full Width Background */}
       <footer className="bg-[#0A0B0D] text-white py-16 px-6 border-t border-white/5">
         <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-6 gap-8">
@@ -876,12 +1118,227 @@ export default function App() {
               <span className="text-[9px] font-bold text-slate-600">&copy; 2026. All rights reserved.</span>
             </div>
           </div>
-          <div className="text-[9px] font-bold text-slate-500 uppercase tracking-widest bg-white/5 px-4 py-2 rounded-full border border-white/5">
-            Inspired by <a href="https://perchance.org/ai-text-to-image-generator" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors underline decoration-white/20">perchance.org</a>
-          </div>
         </div>
       </footer>
 
+
+      {/* Browser Storage Sticky Button */}
+      <button
+        onClick={() => setIsGalleryOpen(true)}
+        className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-6 py-3 bg-slate-900/95 backdrop-blur-md text-white rounded-full shadow-2xl shadow-indigo-500/10 flex items-center gap-3 font-black text-xs uppercase tracking-widest hover:bg-slate-800 hover:scale-105 transition-all border border-white/10"
+      >
+        <Database size={16} className="text-indigo-400" /> Storage Gallery
+        <span className="bg-white/10 px-2.5 py-1 rounded-full text-[10px] text-indigo-300">{savedPrompts.length}</span>
+      </button>
+
+      {/* Browser Storage Gallery Modal */}
+      {isGalleryOpen && (
+        <div className="fixed inset-0 z-[110] bg-[#121417] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+            {/* Gallery Header */}
+            <div className="p-4 md:p-6 flex justify-between items-center border-b border-white/10 z-10 shrink-0 bg-slate-900 shadow-xl">
+               <div className="flex items-center gap-3 w-full md:w-auto">
+                 <div className="p-2 bg-indigo-600/20 text-indigo-400 rounded-xl">
+                    <Database size={20} />
+                 </div>
+                 <div className="flex-1">
+                   <h2 className="text-sm font-black uppercase tracking-widest text-white">Browser Storage</h2>
+                   <p className="text-[10px] text-slate-400 font-bold">Local Data Management</p>
+                 </div>
+                 <button onClick={() => setIsGalleryOpen(false)} className="md:hidden p-2 bg-white/5 hover:bg-white/10 rounded-full transition-colors text-slate-400 ml-auto">
+                    <X size={20} />
+                 </button>
+               </div>
+               
+               {/* Search Bar - Desktop */}
+               <div className="hidden md:flex flex-1 max-w-lg mx-8 relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                     <Search size={16} className="text-slate-500" />
+                  </div>
+                  <div className="relative w-full">
+                  <input
+                    type="text"
+                    placeholder="Search by title or prompt keyword..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="block w-full pl-10 pr-10 py-2 border border-white/10 rounded-xl leading-5 bg-black/30 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 sm:text-sm transition-all"
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="absolute inset-y-0 right-2 flex items-center justify-center p-1 rounded-lg bg-white/10 hover:bg-white/20 text-white"
+                      aria-label="Clear search"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+               </div>
+               </div>
+
+               <button onClick={() => setIsGalleryOpen(false)} className="hidden md:block p-2 bg-white/5 hover:bg-white/10 rounded-full transition-colors text-slate-400 shrink-0">
+                  <X size={24} />
+               </button>
+            </div>
+
+            {/* Gallery Controls */}
+            <div className="px-4 md:px-6 py-4 bg-white/5 border-b border-white/5 flex flex-col md:flex-row gap-4 md:items-center justify-between shrink-0">
+              {/* Search Bar - Mobile */}
+              <div className="md:hidden relative w-full">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                     <Search size={14} className="text-slate-500" />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Search prompts..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="block w-full pl-9 pr-3 py-2 border border-white/10 rounded-lg leading-5 bg-black/30 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 text-xs transition-all"
+                  />
+              </div>
+              
+              <div className="flex items-center gap-3 overflow-x-auto pb-1 md:pb-0 custom-scrollbar shrink-0">
+                 <select 
+                   value={activeFolder} 
+                   onChange={(e) => setActiveFolder(e.target.value)}
+                   className="bg-slate-900 border border-white/10 text-[10px] text-white font-bold uppercase rounded-lg px-3 py-2 outline-none focus:border-indigo-500 cursor-pointer"
+                 >
+                    <option value="All">All Folders</option>
+                    {folders.map(f => <option key={f} value={f}>{f}</option>)}
+                 </select>
+                 
+                 <select 
+                   value={gallerySortBy} 
+                   onChange={(e) => setGallerySortBy(e.target.value)}
+                   className="bg-slate-900 border border-white/10 text-[10px] text-white font-bold uppercase rounded-lg px-3 py-2 outline-none focus:border-indigo-500 cursor-pointer"
+                 >
+                    <option value="Newest">Sort: Newest</option>
+                    <option value="Oldest">Sort: Oldest</option>
+                    <option value="Best">Sort: Best (Favs)</option>
+                 </select>
+
+                 <div className="h-6 w-px bg-white/10 mx-1 hidden sm:block"></div>
+                 
+                 <div className="flex items-center gap-2">
+                   <input 
+                     type="text" 
+                     placeholder="New Folder..." 
+                     value={newFolderName}
+                     onChange={(e)=>setNewFolderName(e.target.value)}
+                     className="bg-slate-900 border border-white/10 text-white rounded-lg px-3 py-1.5 text-xs focus:border-indigo-500 outline-none w-28 md:w-32"
+                     onKeyPress={(e) => e.key === 'Enter' && createNewFolder()}
+                   />
+                   <button onClick={createNewFolder} className="p-1.5 bg-indigo-600 rounded-lg hover:bg-indigo-500 text-white"><FolderPlus size={14} /></button>
+                 </div>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0 md:ml-auto overflow-x-auto pb-1 md:pb-0">
+                 <input type="file" accept=".json" onChange={importStorageJSON} className="hidden" ref={storageImportRef} />
+                 <input type="file" accept=".json,.xlsx,.xls" onChange={importGalleryFromExcel} className="hidden" ref={galleryExcelInputRef} />
+                 <button onClick={() => exportStorageJSON()} className="px-3 md:px-2 py-2 text-[10px] text-white font-bold uppercase tracking-wider bg-white/10 hover:bg-white/20 rounded-lg flex items-center gap-2 transition-colors whitespace-nowrap"><ArrowDownToLine size={14} /> <span className="hidden md:inline">Backup</span></button>
+                 <button onClick={() => storageImportRef.current?.click()} className="px-3 md:px-2 py-2 text-[10px] text-white font-bold uppercase tracking-wider bg-white/10 hover:bg-white/20 rounded-lg flex items-center gap-2 transition-colors whitespace-nowrap"><ArrowUpFromLine size={14} /> <span className="hidden md:inline">Restore</span></button>
+                 <button onClick={() => galleryExcelInputRef.current?.click()} className="px-3 md:px-2 py-2 text-[10px] text-white font-bold uppercase tracking-wider bg-sky-600 hover:bg-sky-500 rounded-lg flex items-center gap-2 transition-colors whitespace-nowrap"><Download size={14} /> <span className="hidden md:inline">Excel → Gallery</span></button>
+                 <button onClick={exportGalleryToExcel} className="px-3 md:px-2 py-2 text-[10px] text-white font-bold uppercase tracking-wider bg-emerald-600 hover:bg-emerald-500 rounded-lg flex items-center gap-2 transition-colors whitespace-nowrap"><FileSpreadsheet size={14} /> <span className="hidden md:inline">Gallery → Excel</span></button>
+                 <button onClick={clearStorage} className="px-3 md:px-2 py-2 text-[10px] font-bold uppercase tracking-wider bg-red-500/20 text-red-400 hover:bg-red-500/30 rounded-lg flex items-center gap-2 transition-colors whitespace-nowrap"><Trash size={14} /> <span className="hidden md:inline">Clear</span></button>
+              </div>
+            </div>
+
+            {/* Prompt List (Horizontal Scroll Desktop, Vertical Mobile) */}
+            <div className="flex-1 overflow-y-auto overflow-x-hidden md:overflow-y-hidden md:overflow-x-auto p-4 md:p-8 bg-[#08090a]">
+               {filteredAndSortedPrompts.length === 0 ? (
+                 <div className="flex h-full w-full items-center justify-center text-slate-500">
+                    <div className="text-center">
+                       <Search size={48} className="mx-auto mb-4 opacity-20" />
+                       <p className="text-sm font-bold uppercase tracking-widest">No prompts found</p>
+                    </div>
+                 </div>
+               ) : (
+                 <div className="flex flex-col md:flex-row h-auto md:h-full gap-6 pb-20 md:pb-0 font-sans items-start md:items-stretch">
+                   {filteredAndSortedPrompts.map(prompt => (
+                      <div key={prompt.id} className="bg-slate-900 border border-white/5 rounded-3xl p-4 flex flex-col gap-4 group relative transition-all hover:border-indigo-500/50 hover:shadow-2xl hover:shadow-indigo-500/10 w-full min-h-[500px] md:min-h-0 md:w-[320px] lg:w-[350px] md:h-full shrink-0">
+                        <div className="flex justify-between items-start gap-3">
+                           <div className="flex-1 min-w-0">
+                             <div className="flex items-center gap-2 mb-1">
+                               {prompt.isFavorite && <Star size={14} className="text-yellow-400 fill-yellow-400 shrink-0" />}
+                               <h3 className="text-base font-black truncate text-white">{prompt.title}</h3>
+                             </div>
+                             <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{new Date(prompt.timestamp).toLocaleString()}</p>
+                           </div>
+                           
+                           <button onClick={() => toggleStar(prompt.id)} className={`p-2 rounded-xl transition-colors ${prompt.isFavorite ? 'text-yellow-400 bg-yellow-400/10' : 'text-slate-500 hover:bg-white/10'}`}>
+                             <Star size={18} className={prompt.isFavorite ? "fill-yellow-400" : ""} />
+                           </button>
+                        </div>
+
+                        {/* Visual Blueprint Render */}
+                        <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-3">
+                           {(!prompt.entities || prompt.entities.length === 0) ? (
+                              <p className="text-sm text-slate-500 italic p-4">Empty workflow...</p>
+                           ) : (
+                              prompt.entities.map(ent => {
+                                 const selectedItems = ent.items.filter(i => i.selected);
+                                 if (selectedItems.length === 0) return null;
+
+                                 let bgClass = 'bg-slate-800';
+                                 switch (ent.type) {
+                                   case 'character': bgClass = 'bg-[#ea580c]'; break;
+                                   case 'interaction': bgClass = 'bg-[#dc2626]'; break;
+                                   case 'environment': bgClass = 'bg-[#2563eb]'; break;
+                                   case 'motion': bgClass = 'bg-[#9333ea]'; break;
+                                   case 'camera': bgClass = 'bg-[#4f46e5]'; break;
+                                   case 'sequence': bgClass = 'bg-[#059669]'; break;
+                                   case 'style': bgClass = 'bg-[#db2777]'; break;
+                                   case 'magic': bgClass = 'bg-[#10b981]'; break;
+                                   case 'negative': bgClass = 'bg-[#334155]'; break;
+                                 }
+
+                                 return (
+                                   <div key={ent.id} className="bg-white rounded-xl overflow-hidden shadow-sm border border-slate-200">
+                                      <div className={`${bgClass} px-3 py-2 flex gap-2 items-center`}>
+                                         <GripVertical size={14} className="text-white/50 shrink-0" />
+                                         {getIcon(ent.type)}
+                                         <span className="text-[10px] font-black uppercase text-white tracking-widest leading-none mt-0.5">{ent.name}</span>
+                                      </div>
+                                      <div className="p-1 max-h-48 overflow-y-auto custom-scrollbar">
+                                         {selectedItems.map((item, idx) => (
+                                            <div key={item.id} className={`flex items-start gap-3 px-3 py-2 ${idx !== selectedItems.length - 1 ? 'border-b border-slate-50' : ''}`}>
+                                               <CheckCircle2 size={14} className={`${ent.type === 'negative' ? 'text-slate-500' : 'text-orange-600'} mt-0.5 shrink-0`} />
+                                               <span className="text-sm text-slate-800 font-medium leading-tight">{item.text}</span>
+                                            </div>
+                                         ))}
+                                      </div>
+                                   </div>
+                                 );
+                              })
+                           )}
+                        </div>
+
+                        <div className="pt-4 border-t border-white/5 flex items-center justify-between gap-3 shrink-0">
+                           <div className="flex items-center gap-2 flex-1 min-w-0 shrink-0 bg-white/5 px-3 py-2 rounded-xl">
+                             <Folder size={14} className="text-slate-500 shrink-0" />
+                             <select 
+                               value={prompt.folder}
+                               onChange={(e) => updateSavedFolder(prompt.id, e.target.value)}
+                               className="bg-transparent text-[11px] text-slate-300 font-bold outline-none cursor-pointer w-full truncate"
+                             >
+                               {folders.map(f => <option key={f} value={f} className="bg-slate-900">{f}</option>)}
+                             </select>
+                           </div>
+
+                           <div className="flex items-center gap-2 shrink-0">
+                             <button onClick={() => deleteSaved(prompt.id)} className="p-2 rounded-xl text-slate-400 hover:text-red-400 hover:bg-white/5 transition-colors" title="Delete Prompt">
+                               <Trash size={18} />
+                             </button>
+                             <button onClick={() => loadSaved(prompt)} className="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-colors shadow-lg active:scale-95">
+                               Load
+                             </button>
+                           </div>
+                        </div>
+                      </div>
+                   ))}
+                 </div>
+               )}
+            </div>
+        </div>
+      )}
 
       {/* Recipe Card Modal */}
       {showRecipeModal && (

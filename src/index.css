@@ -1,1 +1,14 @@
 @import "tailwindcss";
+
+/* Hide scrollbars on desktop in visual blueprint containers while keeping scrolling active */
+@media (min-width: 768px) {
+  .custom-scrollbar {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
+}

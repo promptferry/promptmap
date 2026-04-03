@@ -64,7 +64,21 @@ The application is fully optimized with:
 
 If you find this tool helpful, consider supporting the development via the link in the application footer.
 
-## 📄 License
+## � Release Notes
+
+### v1.1.0 (2026-04-03)
+- Added Gallery <-> Excel import/export workflow
+  - `Export Gallery to Excel` (one workbook, one sheet per prompt)
+  - `Import Gallery from Excel` (clears existing gallery before loading)
+  - App expects set format per sheet:
+    - Title (row 1), Folder (row 2), IsFavorite (row 3), Section/Type/Detail/IsSelected (row 4)
+    - Data rows from row 5 onwards
+- Added gallery search clear button (`x`) for fast reset
+- Added versioned history modal with changelog in-app
+- Added `history.md` as internal deployment history
+- Added `custom-scrollbar` CSS rule (desktop hidden scrollbars)
+
+## �📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
