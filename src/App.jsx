@@ -1043,32 +1043,13 @@ export default function App() {
                 </div>
               </div>
             </div>
-          </div>
+            </div>
 
-          <div className="min-h-[250px] bg-white/5 rounded-xl p-5 border border-white/10 italic font-serif leading-relaxed text-base relative">
+            <div className="min-h-[250px] bg-white/5 rounded-xl p-5 border border-white/10 italic font-serif leading-relaxed text-base relative">
               {error && <div className="text-red-400 text-[10px] mb-2">{error}</div>}
               {finalPrompt || "Add a character to get started..."}
             </div>
-
-            <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-5">
-              <div className="flex items-center justify-between gap-3 mb-3">
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Actions</p>
-                  <p className="text-sm font-bold text-slate-900">Prompt Management</p>
-                </div>
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  onClick={() => { navigator.clipboard.writeText(finalPrompt); setIsCopied(true); setTimeout(() => setIsCopied(false), 2000); }}
-                  className="flex-1 py-3 bg-indigo-600 text-white rounded-2xl font-black uppercase tracking-wider text-xs transition-all hover:bg-indigo-500 active:scale-95 shadow-sm"
-                >
-                  {isCopied ? 'Copied!' : 'Copy Prompt'}
-                </button>
-              </div>
-            </div>
           </div>
-
 
         </div>
       </div>
