@@ -68,7 +68,7 @@ import * as XLSX from 'xlsx';
 import { TEMPLATES } from './templates';
 import { STYLE_GROUPS } from './styles';
 
-const SHOW_ADS = true; // Toggle this to true when you want to show ads
+const SHOW_ADS = false; // Toggle this to true when you want to show ads
 
 const HISTORY_ENTRIES = [
   {
@@ -1056,7 +1056,6 @@ export default function App() {
                   <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Actions</p>
                   <p className="text-sm font-bold text-slate-900">Prompt Management</p>
                 </div>
-                <span className="text-[10px] font-black uppercase tracking-[0.25em] text-orange-600">Ads fund AI</span>
               </div>
 
               <div className="flex gap-3">
