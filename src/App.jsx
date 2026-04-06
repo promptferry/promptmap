@@ -68,7 +68,7 @@ import * as XLSX from 'xlsx';
 import { TEMPLATES } from './templates';
 import { STYLE_GROUPS } from './styles';
 
-const SHOW_ADS = false; // Toggle this to true when you want to show ads
+const SHOW_ADS = true; // Toggle this to true when you want to show ads
 
 const HISTORY_ENTRIES = [
   {
@@ -925,7 +925,7 @@ export default function App() {
           </div>
         </div>
 
-        <div className="lg:col-span-5 lg:sticky lg:top-6 h-fit space-y-6">
+        <div className="lg:col-span-5 space-y-6">
           {/* Desktop Ad Space (300x250) - Only visible if SHOW_ADS is true */}
           {SHOW_ADS && (
             <div className="hidden md:flex mb-4 w-full justify-center">
@@ -1049,6 +1049,25 @@ export default function App() {
               {error && <div className="text-red-400 text-[10px] mb-2">{error}</div>}
               {finalPrompt || "Add a character to get started..."}
             </div>
+
+            <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-5">
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Actions</p>
+                  <p className="text-sm font-bold text-slate-900">Prompt Management</p>
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-[0.25em] text-orange-600">Ads fund AI</span>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => { navigator.clipboard.writeText(finalPrompt); setIsCopied(true); setTimeout(() => setIsCopied(false), 2000); }}
+                  className="flex-1 py-3 bg-indigo-600 text-white rounded-2xl font-black uppercase tracking-wider text-xs transition-all hover:bg-indigo-500 active:scale-95 shadow-sm"
+                >
+                  {isCopied ? 'Copied!' : 'Copy Prompt'}
+                </button>
+              </div>
+            </div>
           </div>
 
 
@@ -1126,14 +1145,30 @@ export default function App() {
       </footer>
 
 
-      {/* Browser Storage Sticky Button */}
-      <button
-        onClick={() => setIsGalleryOpen(true)}
-        className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-6 py-3 bg-slate-900/95 backdrop-blur-md text-white rounded-full shadow-2xl shadow-indigo-500/10 flex items-center gap-3 font-black text-xs uppercase tracking-widest hover:bg-slate-800 hover:scale-105 transition-all border border-white/10"
-      >
-        <Database size={16} className="text-indigo-400" /> Storage Gallery
-        <span className="bg-white/10 px-2.5 py-1 rounded-full text-[10px] text-indigo-300">{savedPrompts.length}</span>
-      </button>
+      {/* Browser Storage Sticky Controls */}
+      <div className="fixed bottom-6 left-0 right-0 z-50 px-4 md:px-6 pointer-events-none">
+        <div className="mx-auto flex w-full max-w-[1200px] flex-col items-center gap-3 md:flex-row md:justify-center md:items-end md:gap-4">
+          <button
+            onClick={() => setIsGalleryOpen(true)}
+            className="pointer-events-auto flex items-center gap-3 rounded-full bg-slate-900/95 px-6 py-3 text-xs font-black uppercase tracking-widest text-white shadow-2xl shadow-indigo-500/10 border border-white/10 transition-all hover:bg-slate-800 hover:scale-105 active:scale-95"
+          >
+            <Database size={16} className="text-indigo-400" /> Storage Gallery
+            <span className="bg-white/10 px-2.5 py-1 rounded-full text-[10px] text-indigo-300">{savedPrompts.length}</span>
+          </button>
+
+          {SHOW_ADS && (
+            <div className="pointer-events-auto w-[320px] rounded-3xl bg-slate-900/95 border border-white/10 px-4 py-3 shadow-2xl text-white text-xs uppercase tracking-[0.2em] font-black md:w-[728px] md:h-[90px] md:px-6 md:py-4">
+              <div className="flex h-full flex-col items-center justify-center gap-1 text-slate-200 md:flex-row md:justify-between md:gap-0">
+                <div className="text-center md:text-left">
+                  <div className="text-[11px]">Sponsored AI Engine</div>
+                  <div className="text-lg font-black">728 x 90 / 320 x 100</div>
+                </div>
+                <div className="text-[10px] text-slate-400 md:text-right">Ads help keep image generation free</div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Browser Storage Gallery Modal */}
       {isGalleryOpen && (
@@ -1153,29 +1188,42 @@ export default function App() {
                  </button>
                </div>
                
-               {/* Search Bar - Desktop */}
-               <div className="hidden md:flex flex-1 max-w-lg mx-8 relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                     <Search size={16} className="text-slate-500" />
+               {/* Desktop Section: Search Bar + Ads */}
+               <div className="hidden md:flex items-center gap-4 flex-1 mx-8">
+                  {/* Search Bar - Desktop */}
+                  <div className="flex-1 relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                       <Search size={16} className="text-slate-500" />
+                    </div>
+                    <div className="relative w-full">
+                    <input
+                      type="text"
+                      placeholder="Search by title or prompt keyword..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="block w-full pl-10 pr-10 py-2 border border-white/10 rounded-xl leading-5 bg-black/30 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 sm:text-sm transition-all"
+                    />
+                    {searchQuery && (
+                      <button
+                        onClick={() => setSearchQuery('')}
+                        className="absolute inset-y-0 right-2 flex items-center justify-center p-1 rounded-lg bg-white/10 hover:bg-white/20 text-white"
+                        aria-label="Clear search"
+                      >
+                        <X size={14} />
+                      </button>
+                    )}
                   </div>
-                  <div className="relative w-full">
-                  <input
-                    type="text"
-                    placeholder="Search by title or prompt keyword..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="block w-full pl-10 pr-10 py-2 border border-white/10 rounded-xl leading-5 bg-black/30 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 sm:text-sm transition-all"
-                  />
-                  {searchQuery && (
-                    <button
-                      onClick={() => setSearchQuery('')}
-                      className="absolute inset-y-0 right-2 flex items-center justify-center p-1 rounded-lg bg-white/10 hover:bg-white/20 text-white"
-                      aria-label="Clear search"
-                    >
-                      <X size={14} />
-                    </button>
+                  </div>
+
+                  {/* Ads - Desktop 728x90 */}
+                  {SHOW_ADS && (
+                    <div className="w-[728px] h-[90px] rounded-xl bg-slate-800/50 border border-white/5 flex items-center justify-center shrink-0">
+                      <div className="text-center">
+                        <div className="text-[10px] font-black uppercase text-slate-400 tracking-wide">Ads support AI</div>
+                        <div className="text-xs font-black text-slate-300">728 x 90</div>
+                      </div>
+                    </div>
                   )}
-               </div>
                </div>
 
                <button onClick={() => setIsGalleryOpen(false)} className="hidden md:block p-2 bg-white/5 hover:bg-white/10 rounded-full transition-colors text-slate-400 shrink-0">
@@ -1184,7 +1232,17 @@ export default function App() {
             </div>
 
             {/* Gallery Controls */}
-            <div className="px-4 md:px-6 py-4 bg-white/5 border-b border-white/5 flex flex-col md:flex-row gap-4 md:items-center justify-between shrink-0">
+            <div className="px-4 md:px-6 py-4 bg-white/5 border-b border-white/5 flex flex-col md:flex-row md:items-center gap-4 shrink-0">
+              {/* Mobile Ads - 320x100 */}
+              {SHOW_ADS && (
+                <div className="md:hidden w-full rounded-xl bg-slate-800/50 border border-white/5 p-3 flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="text-[10px] font-black uppercase text-slate-400 tracking-wide">Ads support AI</div>
+                    <div className="text-xs font-black text-slate-300">320 x 100</div>
+                  </div>
+                </div>
+              )}
+
               {/* Search Bar - Mobile */}
               <div className="md:hidden relative w-full">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -1199,7 +1257,7 @@ export default function App() {
                   />
               </div>
               
-              <div className="flex items-center gap-3 overflow-x-auto pb-1 md:pb-0 custom-scrollbar shrink-0">
+              <div className="w-full md:flex-1 flex flex-col md:flex-row items-stretch md:items-center gap-3 overflow-x-auto pb-1 md:pb-0 custom-scrollbar shrink-0">
                  <select 
                    value={activeFolder} 
                    onChange={(e) => setActiveFolder(e.target.value)}
@@ -1234,7 +1292,7 @@ export default function App() {
                  </div>
               </div>
 
-              <div className="flex items-center gap-2 shrink-0 md:ml-auto overflow-x-auto pb-1 md:pb-0">
+              <div className="w-full md:w-auto flex items-center gap-2 shrink-0 overflow-x-auto pb-1 md:pb-0">
                  <input type="file" accept=".json" onChange={importStorageJSON} className="hidden" ref={storageImportRef} />
                  <input type="file" accept=".json,.xlsx,.xls" onChange={importGalleryFromExcel} className="hidden" ref={galleryExcelInputRef} />
                  <button onClick={() => exportStorageJSON()} className="px-3 md:px-2 py-2 text-[10px] text-white font-bold uppercase tracking-wider bg-white/10 hover:bg-white/20 rounded-lg flex items-center gap-2 transition-colors whitespace-nowrap"><ArrowDownToLine size={14} /> <span className="hidden md:inline">Backup</span></button>
